@@ -9,6 +9,8 @@ const app = express();
 const {
   calculateScore,
   distributeReward,
+  getScore,
+  getRanking,
 } = require("./controller/gameController");
 
 app.options("*", cors());
@@ -23,6 +25,8 @@ const MongoURI = process.env.MONGOURI;
 
 app.post("/calculateScore", calculateScore);
 app.get("/distributeReward", distributeReward);
+app.post("/getScore", getScore);
+app.get("/getRanking", getRanking);
 
 async function startApp() {
   await mongoose
