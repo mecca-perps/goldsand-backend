@@ -24,7 +24,7 @@ const port = process.env.PORT;
 const MongoURI = process.env.MONGOURI;
 
 app.post("/calculateScore", calculateScore);
-app.get("/distributeReward", distributeReward);
+app.post("/distributeReward", distributeReward);
 app.post("/getScore", getScore);
 app.get("/getRanking", getRanking);
 

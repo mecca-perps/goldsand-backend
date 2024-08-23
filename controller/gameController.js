@@ -27,7 +27,15 @@ exports.calculateScore = async (req, res) => {
 };
 
 exports.distributeReward = async (req, res) => {
+  const { rewardAmount } = req.body;
+  const players = await Player.find();
+  if (players.length === 0) {
+    res.send({ message: "fail" });
+    return;
+  }
+  const amount = ethers.utils.parseUnits(rewardAmount.toString(), 6);
   const topAddress = await findTopPlayer();
+
   const rpcUrl = "https://base.llamarpc.com";
 
   const privateKey = process.env.PRIVATE_KEY;
@@ -71,23 +79,15 @@ exports.distributeReward = async (req, res) => {
           name: "topPlayer",
           type: "address",
         },
+        {
+          internalType: "uint256",
+          name: "amount",
+          type: "uint256",
+        },
       ],
       name: "distributeReward",
       outputs: [],
       stateMutability: "nonpayable",
-      type: "function",
-    },
-    {
-      inputs: [],
-      name: "lastWeekTimestamp",
-      outputs: [
-        {
-          internalType: "uint256",
-          name: "",
-          type: "uint256",
-        },
-      ],
-      stateMutability: "view",
       type: "function",
     },
     {
@@ -111,19 +111,6 @@ exports.distributeReward = async (req, res) => {
           internalType: "contract IERC20",
           name: "",
           type: "address",
-        },
-      ],
-      stateMutability: "view",
-      type: "function",
-    },
-    {
-      inputs: [],
-      name: "weekDuration",
-      outputs: [
-        {
-          internalType: "uint256",
-          name: "",
-          type: "uint256",
         },
       ],
       stateMutability: "view",
@@ -169,8 +156,8 @@ exports.distributeReward = async (req, res) => {
   );
 
   try {
-    const res = await gameContract.distributeReward(topAddress);
-    if (res) {
+    const result = await gameContract.distributeReward(topAddress, amount);
+    if (result) {
       // reset history
       await Player.deleteMany({});
       // register winner
@@ -182,28 +169,32 @@ exports.distributeReward = async (req, res) => {
     }
     res.send({ message: "success" });
   } catch (error) {
-    res.send({ message: "failed" });
+    res.send({ message: "fail" });
     console.log(error);
   }
 };
 
 const findTopPlayer = async () => {
   const players = await Player.find();
-  let topAddress = "";
-  let topScore = 0;
+  let addr = "";
+  let topScore = -1;
   for (const player of players) {
     if (player.score > topScore) {
       topScore = player.score;
-      topAddress = player.walletAddress;
+      addr = player.walletAddress;
     }
   }
-  return topAddress;
+  return addr;
 };
 
 exports.getScore = async (req, res) => {
   const { walletAddress } = req.body;
   const player = await Player.findOne({ walletAddress });
-  res.send({ message: "success", score: player.score });
+  if (player) {
+    res.send({ message: "success", score: player.score });
+  } else {
+    res.send({ message: "fail" });
+  }
 };
 
 exports.getRanking = async (req, res) => {
